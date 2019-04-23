@@ -1,0 +1,12 @@
+# hidden files
+.*
+
+# configuration files
+*.toml
+
+# certificates
+/certs
+
+# binaries
+/build
+
