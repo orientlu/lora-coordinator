@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/orientlu/lora-coordinator/internal/config"
+	"github.com/orientlu/lora-coordinator/api/gateway"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
-// MapGatwayMqtt ..
-type MapGatwayMqtt struct {
+// MapGatewayMqtt ..
+type MapGatewayMqtt struct {
 	GateWayID     string
 	MqttBrokerURL string
 	UpdateTime    time.Time
@@ -20,14 +20,14 @@ type MapGatwayMqtt struct {
 }
 
 // SaveMapGatewayMqtt store the struct to redis
-func SaveMapGatewayMqtt(p *redis.Pool, m *MapGatwayMqtt) error {
+func SaveMapGatewayMqtt(p *redis.Pool, m *MapGatewayMqtt) error {
 
 	c := p.Get()
 	defer c.Close()
 
 	// formate
-	key := fmt.Sprintf("%s/%s", config.C.Backend.Gateway.NotifyTopicMacEventRedisPrefix, m.GateWayID)
-	val := fmt.Sprintf("%s/%s", m.MqttBrokerURL, m.UpdateTime)
+	key := fmt.Sprintf(gateway.NotifyMacKeyTempl, gateway.NotifyMacPrefixVal, m.GateWayID)
+	val := fmt.Sprintf(gateway.NotifyMacValTempl, m.MqttBrokerURL, m.UpdateTime)
 
 	str, err := redis.String(c.Do("SET", key, val, "EX", m.Expires))
 	if err != nil {

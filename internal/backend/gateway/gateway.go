@@ -20,7 +20,7 @@ type Backend struct {
 }
 
 // notifyMacChan storege msg wati to write into redis, notify event: mac
-var notifyMacChan = make(chan *storage.MapGatwayMqtt, 20)
+var notifyMacChan = make(chan *storage.MapGatewayMqtt, 20)
 
 var gateway Backend
 
@@ -47,6 +47,7 @@ func (b *Backend) NotifytHandler(client paho.Client, msg paho.Message) {
 		"broker":  server[0],
 	}).Trace("backen/gateway: handle mqtt msg")
 
+	// topic: backenType/MsgType/EventType
 	topic := strings.Replace(msg.Topic(), "/", " ", -1)
 	topicSlice := strings.Fields(topic)
 	if len(topicSlice) < 3 {
@@ -70,10 +71,10 @@ func handleNotifyMac(mqttURL string, payload []byte) {
 		log.Warningf("backen/gateway:unmarshl payload error %s", err)
 		return
 	}
-	m := &storage.MapGatwayMqtt{
+	m := &storage.MapGatewayMqtt{
 		GateWayID:     string(stats.GatewayId),
 		MqttBrokerURL: mqttURL,
-		UpdateTime:    time.Now(),
+		UpdateTime:    time.Now().Local(),
 		Expires:       config.C.Backend.Gateway.NotifyTopicMacEventRedisExpires,
 	}
 	notifyMacChan <- m
@@ -87,7 +88,7 @@ func handleNotifyMac(mqttURL string, payload []byte) {
 }
 
 // GetNotifyMacChan ...
-func GetNotifyMacChan() <-chan *storage.MapGatwayMqtt {
+func GetNotifyMacChan() <-chan *storage.MapGatewayMqtt {
 	return notifyMacChan
 }
 

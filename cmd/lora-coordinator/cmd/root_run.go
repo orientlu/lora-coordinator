@@ -9,7 +9,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/gomodule/redigo/redis"
 	"github.com/orientlu/lora-coordinator/internal/backend/gateway"
 	"github.com/orientlu/lora-coordinator/internal/config"
 	"github.com/orientlu/lora-coordinator/internal/mqtt"
@@ -83,18 +82,6 @@ func setStorage() error {
 		log.WithError(err).Error("setup storage error")
 		return errors.Wrap(err, "setup storage error")
 	}
-
-	redisConn := storage.RedisPool().Get()
-	defer redisConn.Close()
-	hello := "hello"
-	if str, err := redis.String(redisConn.Do("SET", "lora-coordinator", hello)); err != nil {
-		log.Errorf("root_run: redis set err, retrun: %s, err: %s", str, err)
-	}
-	str, err := redis.String(redisConn.Do("GET", "lora-coordinator"))
-	if str != "hello" || err != nil {
-		log.Errorf("root_run: redis get err, retrun: %s, err: %s", str, err)
-	}
-
 	return nil
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/orientlu/lora-coordinator/internal/config"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -63,4 +64,17 @@ func Setup(conf config.Config) error {
 // RedisPool return  redis pool
 func RedisPool() *redis.Pool {
 	return redisPool
+}
+
+// SaveKV ..
+func SaveKV(p *redis.Pool, key string, val string) error {
+	c := p.Get()
+	defer c.Close()
+
+	str, err := redis.String(c.Do("SET", key, val))
+	if err != nil {
+		log.Errorf("storage: redis set error: %s, return: %s", err, str)
+		return errors.Wrap(err, "set redis error")
+	}
+	return nil
 }
