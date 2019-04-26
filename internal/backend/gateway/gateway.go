@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"sync"
@@ -72,7 +73,7 @@ func handleNotifyMac(mqttURL string, payload []byte) {
 		return
 	}
 	m := &storage.MapGatewayMqtt{
-		GateWayID:     string(stats.GatewayId),
+		GateWayID:     stats.GatewayId,
 		MqttBrokerURL: mqttURL,
 		UpdateTime:    time.Now().Local(),
 		Expires:       config.C.Backend.Gateway.NotifyTopicMacEventRedisExpires,
@@ -80,7 +81,7 @@ func handleNotifyMac(mqttURL string, payload []byte) {
 	notifyMacChan <- m
 
 	log.WithFields(log.Fields{
-		"GatewayId":     m.GateWayID,
+		"GatewayId":     hex.EncodeToString(m.GateWayID),
 		"MqttBrokerURL": m.MqttBrokerURL,
 		"UpdateTime":    m.UpdateTime,
 		"expires":       m.Expires,

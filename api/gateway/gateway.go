@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"time"
@@ -24,7 +25,7 @@ var NotifyMacPrefixVal = ""
 var updatePrefixtime = time.Now()
 
 // GetGatewayMapMqttURL .. return the gateway connected mqtt broker
-func GetGatewayMapMqttURL(p *redis.Pool, gwID string) (url string, err error) {
+func GetGatewayMapMqttURL(p *redis.Pool, gatewayID []byte) (url string, err error) {
 	c := p.Get()
 	defer c.Close()
 
@@ -34,6 +35,7 @@ func GetGatewayMapMqttURL(p *redis.Pool, gwID string) (url string, err error) {
 	}
 
 	/// make key and get mqtturl/updatetime
+	gwID := hex.EncodeToString(gatewayID)
 	key := fmt.Sprintf(NotifyMacKeyTempl, NotifyMacPrefixVal, gwID)
 	val, err := redis.String(c.Do("GET", key))
 	if err != nil && err != redis.ErrNil {

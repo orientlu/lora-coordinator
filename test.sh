@@ -2,7 +2,7 @@
 # by orientlu
 
 #set -x
-version="0.0.2"
+version="0.0.1"
 
 coordinator="lora-coo"
 mqtt_brokers_name=(

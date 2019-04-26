@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 
 // MapGatewayMqtt ..
 type MapGatewayMqtt struct {
-	GateWayID     string
+	GateWayID     []byte
 	MqttBrokerURL string
 	UpdateTime    time.Time
 	Expires       int // map expire time in second
@@ -26,7 +27,7 @@ func SaveMapGatewayMqtt(p *redis.Pool, m *MapGatewayMqtt) error {
 	defer c.Close()
 
 	// formate
-	key := fmt.Sprintf(gateway.NotifyMacKeyTempl, gateway.NotifyMacPrefixVal, m.GateWayID)
+	key := fmt.Sprintf(gateway.NotifyMacKeyTempl, gateway.NotifyMacPrefixVal, hex.EncodeToString(m.GateWayID))
 	val := fmt.Sprintf(gateway.NotifyMacValTempl, m.MqttBrokerURL, m.UpdateTime)
 
 	str, err := redis.String(c.Do("SET", key, val, "EX", m.Expires))
