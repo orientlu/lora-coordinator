@@ -11,13 +11,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// RedisKV storage data
-type RedisKV struct {
-	Key     string
-	Val     string
-	Expires int // second
-}
-
 // redisPool holds Redis connection pool.
 var redisPool *redis.Pool
 

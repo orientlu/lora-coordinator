@@ -20,7 +20,7 @@ type Backend struct {
 }
 
 // notifyMacChan storege msg wati to write into redis, notify event: mac
-var notifyMacChan = make(chan *storage.RedisKV, 20)
+var notifyMacChan = make(chan *storage.MapGatwayMqtt, 20)
 
 var gateway Backend
 
@@ -70,21 +70,24 @@ func handleNotifyMac(mqttURL string, payload []byte) {
 		log.Warningf("backen/gateway:unmarshl payload error %s", err)
 		return
 	}
-	notifyMacChan <- &storage.RedisKV{
-		Key:     config.C.Backend.Gateway.NotifyTopicMacEventRedisPrefix + string(stats.GatewayId),
-		Val:     mqttURL,
-		Expires: config.C.Backend.Gateway.NotifyTopicMacEventRedisExpires,
+	m := &storage.MapGatwayMqtt{
+		GateWayID:     string(stats.GatewayId),
+		MqttBrokerURL: mqttURL,
+		UpdateTime:    time.Now(),
+		Expires:       config.C.Backend.Gateway.NotifyTopicMacEventRedisExpires,
 	}
+	notifyMacChan <- m
 
 	log.WithFields(log.Fields{
-		"key":     config.C.Backend.Gateway.NotifyTopicMacEventRedisPrefix + string(stats.GatewayId),
-		"val":     mqttURL,
-		"expires": config.C.Backend.Gateway.NotifyTopicMacEventRedisExpires,
+		"GatewayId":     m.GateWayID,
+		"MqttBrokerURL": m.MqttBrokerURL,
+		"UpdateTime":    m.UpdateTime,
+		"expires":       m.Expires,
 	}).Trace("backen/gateway: send notifyMac -> notifyMacChan")
 }
 
 // GetNotifyMacChan ...
-func GetNotifyMacChan() <-chan *storage.RedisKV {
+func GetNotifyMacChan() <-chan *storage.MapGatwayMqtt {
 	return notifyMacChan
 }
 

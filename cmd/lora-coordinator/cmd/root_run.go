@@ -14,10 +14,8 @@ import (
 	"github.com/orientlu/lora-coordinator/internal/config"
 	"github.com/orientlu/lora-coordinator/internal/mqtt"
 	"github.com/orientlu/lora-coordinator/internal/storage"
-	"github.com/orientlu/lora-coordinator/internal/storage/notify"
 
 	"github.com/pkg/errors"
-
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -31,7 +29,7 @@ func run(cmd *cobra.Command, args []string) error {
 		setLog,
 		setStorage,
 		connectMqttBroker,
-		startStorageNotifyServer,
+		startGatewaySaveServer,
 	}
 
 	for _, t := range tasks {
@@ -55,7 +53,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 		disconnectMqtt()
 
-		stopStorageNotifyServer()
+		stopGatewaySaveServer()
 
 		exitChan <- struct{}{}
 	}()
@@ -115,11 +113,11 @@ func disconnectMqtt() {
 	mqtt.Close()
 }
 
-func startStorageNotifyServer() error {
-	notify.Start()
+func startGatewaySaveServer() error {
+	gateway.Start()
 	return nil
 }
 
-func stopStorageNotifyServer() {
-	notify.Close()
+func stopGatewaySaveServer() {
+	gateway.Close()
 }

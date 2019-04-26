@@ -1,12 +1,18 @@
 #!/bin/bash
 # by orientlu
 
-version="0.0.1"
-mqtt_brokers=(
+#set -x
+version="0.0.2"
+
+coordinator="lora-coo"
+mqtt_brokers_name=(
 mosquitto1
 mosquitto2
 )
-redis=redis_db
+gatewaybridge_name="bridge"
+redis_name="redis_db"
+network_name="test_coo"
+
 
 
 if [[ -n "$1" && "$1" == "help" ]]; then
@@ -14,34 +20,64 @@ if [[ -n "$1" && "$1" == "help" ]]; then
     exit 0
 fi
 
+
 if [[ -z "$1" || "$1" == "run" ]]; then
-    mqtt_cmd=" "
-    for((i=0; i<${#mqtt_brokers[*]};i++))
+
+    echo -n "create test network "
+    docker network create -d bridge ${network_name}
+    docker network ls
+
+    echo  "start mqtt"
+    mqtt_url_list=""
+    for((i=0; i<${#mqtt_brokers_name[*]};i++))
     do
-        mqtt_cmd+="--link ${mqtt_brokers[$i]}:${mqtt_brokers[$i]} "
-        docker run -d --name ${mqtt_brokers[$i]} -d  -p 127.0.0.1:$((1883+i)):1883 ansi/mosquitto
+        docker run --name ${mqtt_brokers_name[$i]} -d --network ${network_name}  -p 127.0.0.1:$((1883+i)):1883 ansi/mosquitto
+        mqtt_url_list+="tcp://${mqtt_brokers_name[$i]}:1883,"
     done
 
-    docker run -d --name ${redis} -d -p 127.0.0.1:6379:6379 redis:3.0.7-alpine
+    echo  "start redis"
+    docker run --name ${redis_name} -d  --network ${network_name} -p 127.0.0.1:6379:6379 redis:3.0.7-alpine
+
+    echo "start gateway-bridge"
+    docker run --name ${gatewaybridge_name} -d --network ${network_name} -p 1700:1700/udp\
+        --env "INTEGRATION.MQTT.AUTH.GENERIC.SERVER=tcp://${mqtt_brokers_name[0]}:1883"\
+        orientludocker/lora-gateway-bridge:0.0.1
 
     #make docker
 
-    docker run  -i --rm --name lor-coo ${mqtt_cmd} --link ${redis}:${redis} --mount type=bind,source=$(pwd),target=/etc/lora-coordinator lora-coordinator:${version}
+    docker run  -i --rm --name ${coordinator}\
+        --network ${network_name}\
+        --env "LORA_COORDINATOR_REDIS_URL=redis://${redis_name}:6379"\
+        --env "LORA_COORDINATOR_MQTT_SERVER=${mqtt_url_list}"\
+        --env "LORA_COORDINATOR_GENERAL_LOG_LEVEL=6"\
+        --mount type=bind,source=$(pwd),target=/etc/lora-coordinator\
+        orientludocker/lora-coordinator:${version}
 fi
 
 
+
 if [[ -z "$1" || "$1" == "clean" ]]; then
-    for((i=0; i<${#mqtt_brokers[*]};i++))
+    for((i=0; i<${#mqtt_brokers_name[*]};i++))
     do
-        echo -n "stop: "
-        docker stop ${mqtt_brokers[$i]}
-        echo -n "remove: "
-        docker rm ${mqtt_brokers[$i]}
+        echo -n "stop "
+        docker stop ${mqtt_brokers_name[$i]}
+        echo -n "remove "
+        docker rm ${mqtt_brokers_name[$i]}
     done
 
-    echo -n "stop: "
-    docker stop ${redis}
-    echo -n "remove: "
-    docker rm ${redis}
+    echo -n "stop "
+    docker stop ${redis_name}
+    echo -n "remove "
+    docker rm ${redis_name}
+
+    echo -n "stop "
+    docker stop ${gatewaybridge_name}
+    echo -n "remove "
+    docker rm ${gatewaybridge_name}
+
+
+    echo -n "emove network "
+    docker network rm ${network_name}
+    docker network ls
 fi
 

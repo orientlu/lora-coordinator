@@ -31,8 +31,10 @@ func Setup(conf config.Config) error {
 
 	rand.Seed(time.Now().Unix())
 	id := rand.Intn(0xffffff)
-	for _, url := range conf.MQTT.Server {
-
+	for _, url := range conf.MQTT.Servers {
+		if url == "" {
+			continue
+		}
 		go func(url string, idSufix int) {
 			opts := paho.NewClientOptions()
 			opts.AddBroker(url)
