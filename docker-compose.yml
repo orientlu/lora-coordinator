@@ -1,0 +1,58 @@
+version: "3"
+
+services:
+  lora-coordinator:
+    image: orientludocker/lora-coordinator:0.0.1
+    volumes:
+      - ./:/etc/lora-coordinator
+    environment:
+      - LORA_COORDINATOR_REDIS_URL=redis://redis_db:6379
+      - LORA_COORDINATOR_MQTT_SERVERS=tcp://mosquitto1:1883,tcp://mosquitto2:1883
+      - LORA_COORDINATOR_GENERAL_LOG_LEVEL=6
+    depends_on:
+      - redis_db
+      - mosquitto1
+      - mosquitto2
+
+  gatewaybridge1:
+    image: orientludocker/lora-gateway-bridge:0.0.1
+    ports:
+      - 127.0.0.1:1700:1700/udp
+    volumes:
+      - ./:/etc/lora-gateway-bridge
+    environment:
+      - INTEGRATION.MQTT.AUTH.GENERIC.SERVER=tcp://mosquitto1:1883
+    depends_on:
+      - mosquitto1
+
+  gatewaybridge2:
+    image: orientludocker/lora-gateway-bridge:0.0.1
+    ports:
+      - 127.0.0.1:1701:1700/udp
+    volumes:
+      - ./:/etc/lora-gateway-bridge
+    environment:
+      - INTEGRATION.MQTT.AUTH.GENERIC.SERVER=tcp://mosquitto2:1883
+    depends_on:
+      - mosquitto2
+
+  redis_db:
+    image: redis:4-alpine
+    volumes:
+      - redisdata:/data
+    ports:
+      - 127.0.0.1:6379:6379
+
+  mosquitto1:
+    image: eclipse-mosquitto
+    ports:
+      - 127.0.0.1:1883:1883
+
+  mosquitto2:
+    image: eclipse-mosquitto
+    ports:
+      - 127.0.0.1:1884:1883
+
+volumes:
+  redisdata:
+
